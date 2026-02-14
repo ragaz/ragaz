@@ -1,0 +1,144 @@
+@model LineageGraphModel
+@{ ViewData["Title"] = "Data Lineage - " + (Model.FocusNode?.EntityName ?? ""); }
+
+<h2><i class="bi bi-diagram-3"></i> Data Lineage</h2>
+@if (Model.FocusNode != null)
+{
+    <p class="text-muted">Tracciabilit&agrave; dati per: <strong>@Model.FocusNode.EntityName</strong> (@Model.FocusNode.SystemName)</p>
+}
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between">
+                <span>Grafo di Lineage</span>
+                <span class="text-muted">@Model.Nodes.Count nodi, @Model.Edges.Count connessioni</span>
+            </div>
+            <div class="card-body">
+                <div id="lineage-graph" style="width:100%; height:500px; border:1px solid #ddd; border-radius:4px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabella nodi -->
+<div class="card mt-3">
+    <div class="card-header">Nodi nel grafo</div>
+    <div class="card-body p-0">
+        <table class="table table-hover table-sm mb-0">
+            <thead class="table-light">
+                <tr><th>Entit&agrave;</th><th>Sistema</th><th>Tipo</th><th>Layer</th><th>Criticit&agrave;</th><th>Azioni</th></tr>
+            </thead>
+            <tbody>
+            @foreach (var n in Model.Nodes.OrderBy(x => x.SystemCode).ThenBy(x => x.EntityCode))
+            {
+                var isFocus = n.DataEntityId == Model.FocusNode?.DataEntityId;
+                <tr class="@(isFocus ? "table-primary" : "")">
+                    <td><strong>@n.EntityName</strong> @if(isFocus){<span class="badge bg-primary">FOCUS</span>}</td>
+                    <td>@n.SystemName</td>
+                    <td>@n.EntityType</td>
+                    <td>@n.DwhLayer</td>
+                    <td>@n.CriticalityLevel</td>
+                    <td>
+                        <a asp-controller="Catalog" asp-action="Entity" asp-route-id="@n.DataEntityId" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i></a>
+                        @if (!isFocus)
+                        {
+                            <a asp-action="Index" asp-route-entityId="@n.DataEntityId" class="btn btn-sm btn-outline-info"><i class="bi bi-diagram-3"></i></a>
+                        }
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    // Dati per il rendering del grafo (usabile con D3.js, vis.js, o qualsiasi libreria)
+    const graphData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(new {
+        nodes = Model.Nodes.Select(n => new { id = n.DataEntityId, label = n.EntityName, system = n.SystemCode, layer = n.DwhLayer, criticality = n.CriticalityLevel }),
+        edges = Model.Edges.Select(e => new { from = e.SourceEntityId, to = e.TargetEntityId, type = e.LineageType, pipeline = e.PipelineName }),
+        focusId = Model.FocusNode?.DataEntityId
+    }));
+
+    // Rendering semplice SVG del grafo
+    const container = document.getElementById('lineage-graph');
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('width', '100%');
+    svg.setAttribute('height', '100%');
+    svg.setAttribute('viewBox', '0 0 1000 500');
+    container.appendChild(svg);
+
+    // Layout semplice basato su layer
+    const layerOrder = { 'STAGING': 0, 'LEVEL0': 1, 'LEVEL1': 2, null: 3 };
+    const layerColors = { 'STAGING': '#6C757D', 'LEVEL0': '#17A2B8', 'LEVEL1': '#28A745' };
+    const critColors = { 'CRITICAL': '#DC3545', 'HIGH': '#FFC107', 'MEDIUM': '#17A2B8', 'LOW': '#28A745' };
+
+    const nodePositions = {};
+    const layerGroups = {};
+
+    graphData.nodes.forEach(n => {
+        const layer = n.layer || 'OTHER';
+        if (!layerGroups[layer]) layerGroups[layer] = [];
+        layerGroups[layer].push(n);
+    });
+
+    const layers = Object.keys(layerGroups).sort((a, b) => (layerOrder[a] ?? 99) - (layerOrder[b] ?? 99));
+    layers.forEach((layer, li) => {
+        const nodes = layerGroups[layer];
+        const x = 100 + li * 250;
+        nodes.forEach((n, ni) => {
+            const y = 50 + ni * 80;
+            nodePositions[n.id] = { x, y };
+        });
+    });
+
+    // Draw edges
+    graphData.edges.forEach(e => {
+        const from = nodePositions[e.from];
+        const to = nodePositions[e.to];
+        if (from && to) {
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('x1', from.x + 80);
+            line.setAttribute('y1', from.y + 15);
+            line.setAttribute('x2', to.x);
+            line.setAttribute('y2', to.y + 15);
+            line.setAttribute('stroke', '#999');
+            line.setAttribute('stroke-width', '2');
+            line.setAttribute('marker-end', 'url(#arrow)');
+            svg.appendChild(line);
+        }
+    });
+
+    // Arrow marker
+    const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+    defs.innerHTML = '<marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#999"/></marker>';
+    svg.insertBefore(defs, svg.firstChild);
+
+    // Draw nodes
+    graphData.nodes.forEach(n => {
+        const pos = nodePositions[n.id];
+        if (!pos) return;
+        const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        rect.setAttribute('x', pos.x);
+        rect.setAttribute('y', pos.y);
+        rect.setAttribute('width', 160);
+        rect.setAttribute('height', 30);
+        rect.setAttribute('rx', 5);
+        rect.setAttribute('fill', n.id === graphData.focusId ? '#0D6EFD' : (critColors[n.criticality] || '#6C757D'));
+        rect.setAttribute('opacity', '0.85');
+        g.appendChild(rect);
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.setAttribute('x', pos.x + 80);
+        text.setAttribute('y', pos.y + 20);
+        text.setAttribute('text-anchor', 'middle');
+        text.setAttribute('fill', 'white');
+        text.setAttribute('font-size', '11');
+        text.textContent = n.label.length > 22 ? n.label.substring(0, 20) + '...' : n.label;
+        g.appendChild(text);
+        svg.appendChild(g);
+    });
+</script>
+}

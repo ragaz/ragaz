@@ -1,0 +1,57 @@
+@model IEnumerable<CriticalityAssessmentModel>
+@{ ViewData["Title"] = "Matrice di Criticità"; }
+
+<h2><i class="bi bi-exclamation-triangle"></i> Matrice di Criticit&agrave;</h2>
+<p class="text-muted">Valutazione multiasse dell'impatto per ogni entit&agrave; dati (scala 1-5 per dimensione)</p>
+
+<div class="alert alert-info">
+    <strong>Logica di scoring:</strong> Somma di 6 dimensioni (max 30). CRITICAL &ge; 24, HIGH &ge; 18, MEDIUM &ge; 12, LOW &lt; 12.
+</div>
+
+<div class="table-responsive">
+    <table class="table table-hover table-sm">
+        <thead class="table-dark">
+            <tr>
+                <th>Entit&agrave;</th>
+                <th class="text-center">Regolamentare</th>
+                <th class="text-center">Operativo</th>
+                <th class="text-center">Finanziario</th>
+                <th class="text-center">Reputazionale</th>
+                <th class="text-center">GDPR</th>
+                <th class="text-center">Data Loss</th>
+                <th class="text-center">Score</th>
+                <th>Livello</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var c in Model)
+        {
+            var levelColor = c.OverallLevel switch {
+                "CRITICAL" => "bg-danger",
+                "HIGH" => "bg-warning text-dark",
+                "MEDIUM" => "bg-info",
+                _ => "bg-success"
+            };
+            <tr>
+                <td><strong>@c.EntityName</strong></td>
+                <td class="text-center">@ScoreCell(c.RegulatoryImpact)</td>
+                <td class="text-center">@ScoreCell(c.OperationalImpact)</td>
+                <td class="text-center">@ScoreCell(c.FinancialImpact)</td>
+                <td class="text-center">@ScoreCell(c.ReputationalImpact)</td>
+                <td class="text-center">@ScoreCell(c.GdprImpact)</td>
+                <td class="text-center">@ScoreCell(c.DataLossImpact)</td>
+                <td class="text-center"><strong>@c.OverallScore / 30</strong></td>
+                <td><span class="badge @levelColor">@c.OverallLevel</span></td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>
+
+@functions {
+    static string ScoreCell(int score)
+    {
+        var color = score >= 4 ? "#DC3545" : (score >= 3 ? "#FFC107" : (score >= 2 ? "#17A2B8" : "#28A745"));
+        return $"<span style='display:inline-block;width:28px;height:28px;line-height:28px;border-radius:50%;background:{color};color:white;text-align:center;font-weight:bold'>{score}</span>";
+    }
+}

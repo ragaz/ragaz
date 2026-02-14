@@ -1,0 +1,43 @@
+@model IEnumerable<DataAssetModel>
+@{ ViewData["Title"] = "Data Asset"; }
+
+<h2><i class="bi bi-folder2-open"></i> Data Asset</h2>
+
+<div class="table-responsive">
+    <table class="table table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>Asset</th>
+                <th>Sistema</th>
+                <th>Tipo</th>
+                <th>Layer DWH</th>
+                <th>Frequenza</th>
+                <th>Classificazione</th>
+                <th>GDPR</th>
+                <th>Regolamentare</th>
+                <th>Entit&agrave;</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var a in Model)
+        {
+            <tr>
+                <td><strong>@a.AssetName</strong><br /><small class="text-muted">@a.AssetCode</small></td>
+                <td>@a.SystemName</td>
+                <td><span class="badge bg-light text-dark">@a.AssetType</span></td>
+                <td>@(a.DwhLayer ?? "-")</td>
+                <td>@(a.RefreshFrequency ?? "-")</td>
+                <td>
+                    @if (a.ClassificationName != null)
+                    {
+                        <span class="badge" style="background-color: @a.ClassificationColor">@a.ClassificationName</span>
+                    }
+                </td>
+                <td>@(a.GdprRelevant ? "Si" : "-")</td>
+                <td>@(a.RegulatoryRelevant ? "Si" : "-")</td>
+                <td><span class="badge bg-info">@a.EntityCount</span></td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>

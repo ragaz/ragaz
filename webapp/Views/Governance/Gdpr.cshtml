@@ -1,0 +1,86 @@
+@model IEnumerable<GdprActivityModel>
+@{ ViewData["Title"] = "Registro GDPR Art. 30"; }
+
+<h2><i class="bi bi-person-lock"></i> Registro dei Trattamenti (Art. 30 GDPR)</h2>
+<p class="text-muted">Registro delle attivit&agrave; di trattamento dei dati personali di Athora Italia S.p.A.</p>
+
+<div class="alert alert-info">
+    <i class="bi bi-info-circle"></i>
+    <strong>Obbligo normativo:</strong> Il Regolamento UE 2016/679 (GDPR) Art. 30 impone al Titolare del trattamento
+    di tenere un registro delle attivit&agrave; di trattamento svolte sotto la propria responsabilit&agrave;.
+    Questo registro deve essere messo a disposizione dell'Autorit&agrave; di controllo (Garante Privacy) su richiesta.
+</div>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-warning">
+        <i class="bi bi-exclamation-triangle"></i> Nessun trattamento ancora registrato.
+        &Egrave; necessario censire tutte le attivit&agrave; di trattamento dati personali.
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>Codice</th>
+                    <th>Attivit&agrave; di Trattamento</th>
+                    <th>Base Giuridica</th>
+                    <th>Finalit&agrave;</th>
+                    <th>Retention</th>
+                    <th>DPIA</th>
+                    <th>Stato</th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var a in Model)
+            {
+                <tr>
+                    <td><code>@a.ActivityCode</code></td>
+                    <td>
+                        <strong>@a.ActivityName</strong>
+                        <br /><small class="text-muted">@a.Description</small>
+                    </td>
+                    <td>
+                        @a.BasisName
+                        <br /><small class="text-muted">@a.GdprArticle</small>
+                    </td>
+                    <td>@a.PurposeName</td>
+                    <td>
+                        @if (a.RetentionPeriodMonths.HasValue)
+                        {
+                            <span>@a.RetentionPeriodMonths mesi (@(a.RetentionPeriodMonths / 12) anni)</span>
+                        }
+                    </td>
+                    <td>
+                        @if (a.DpiaRequired)
+                        {
+                            var dpiaColor = a.DpiaStatus switch {
+                                "COMPLETED" => "bg-success",
+                                "IN_PROGRESS" => "bg-warning text-dark",
+                                _ => "bg-danger"
+                            };
+                            <span class="badge @dpiaColor">@(a.DpiaStatus ?? "NON AVVIATA")</span>
+                        }
+                        else
+                        {
+                            <span class="text-muted">Non richiesta</span>
+                        }
+                    </td>
+                    <td>
+                        @{
+                            var statusColor = a.Status switch {
+                                "APPROVED" => "bg-success",
+                                "IN_REVIEW" => "bg-warning text-dark",
+                                _ => "bg-secondary"
+                            };
+                        }
+                        <span class="badge @statusColor">@a.Status</span>
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+}

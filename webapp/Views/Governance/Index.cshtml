@@ -1,0 +1,47 @@
+@model IEnumerable<WorkflowInstanceModel>
+@{ ViewData["Title"] = "Workflow Approvativi"; }
+
+<h2><i class="bi bi-check2-square"></i> Workflow Approvativi</h2>
+<p class="text-muted">Richieste di approvazione in attesa</p>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-success"><i class="bi bi-check-circle"></i> Nessun workflow pendente.</div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>#</th>
+                    <th>Workflow</th>
+                    <th>Oggetto</th>
+                    <th>Stato</th>
+                    <th>Step Corrente</th>
+                    <th>Approvatore</th>
+                    <th>Richiedente</th>
+                    <th>Data</th>
+                    <th>Giorni</th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var w in Model)
+            {
+                var daysBadge = w.DaysPending > 5 ? "bg-danger" : (w.DaysPending > 2 ? "bg-warning text-dark" : "bg-success");
+                <tr>
+                    <td>@w.InstanceId</td>
+                    <td><strong>@w.WorkflowName</strong></td>
+                    <td><small>@w.TargetEntityType #@w.TargetEntityId</small><br /><small class="text-muted">@w.ChangeDescription</small></td>
+                    <td><span class="badge bg-info">@w.Status</span></td>
+                    <td>@w.CurrentStepName</td>
+                    <td><span class="badge bg-primary">@w.ApproverRoleName</span></td>
+                    <td>@w.RequestedByName</td>
+                    <td><small>@w.RequestDate.ToString("dd/MM/yyyy")</small></td>
+                    <td><span class="badge @daysBadge">@w.DaysPending gg</span></td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+}

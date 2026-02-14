@@ -1,0 +1,188 @@
+@model DataEntityModel
+@{ ViewData["Title"] = Model.EntityName; }
+
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-controller="Catalog" asp-action="Index">Sistemi</a></li>
+        <li class="breadcrumb-item">@Model.SystemName</li>
+        <li class="breadcrumb-item">@Model.AssetName</li>
+        <li class="breadcrumb-item active">@Model.EntityName</li>
+    </ol>
+</nav>
+
+<!-- Header -->
+<div class="d-flex justify-content-between align-items-start mb-3">
+    <div>
+        <h2>@Model.EntityName</h2>
+        <p class="text-muted">@Model.EntityCode | @Model.EntityType | @Model.SystemName</p>
+    </div>
+    <div class="d-flex gap-2">
+        @if (Model.ClassificationName != null)
+        {
+            <span class="badge fs-6" style="background-color: @Model.ClassificationColor">@Model.ClassificationName</span>
+        }
+        @{
+            var critBadge = Model.CriticalityLevel switch {
+                "CRITICAL" => "bg-danger",
+                "HIGH" => "bg-warning text-dark",
+                "MEDIUM" => "bg-info",
+                _ => "bg-success"
+            };
+        }
+        <span class="badge fs-6 @critBadge">@(Model.CriticalityLevel ?? "N/D")</span>
+        @{
+            var govBadge = Model.GovernanceStatus switch {
+                "APPROVED" => "bg-success",
+                "IN_REVIEW" => "bg-warning text-dark",
+                _ => "bg-secondary"
+            };
+        }
+        <span class="badge fs-6 @govBadge">@Model.GovernanceStatus</span>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <!-- Info principali -->
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">Descrizione</div>
+            <div class="card-body">
+                @if (Model.BusinessDescription != null)
+                {
+                    <p><strong>Business:</strong> @Model.BusinessDescription</p>
+                }
+                @if (Model.Description != null)
+                {
+                    <p><strong>Tecnica:</strong> @Model.Description</p>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">Propriet&agrave;</div>
+            <div class="card-body">
+                <table class="table table-sm table-borderless">
+                    <tr><td class="text-muted">Layer DWH</td><td>@(Model.DwhLayer ?? "N/A")</td></tr>
+                    <tr><td class="text-muted">Frequenza</td><td>@(Model.LoadFrequency ?? "N/A")</td></tr>
+                    <tr><td class="text-muted">Strategia</td><td>@(Model.LoadStrategy ?? "N/A")</td></tr>
+                    <tr><td class="text-muted">Data Owner</td><td>@(Model.DataOwnerName ?? "<span class='text-danger'>Non assegnato</span>")</td></tr>
+                    <tr><td class="text-muted">Data Steward</td><td>@(Model.DataStewardName ?? "<span class='text-danger'>Non assegnato</span>")</td></tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- GDPR & DLP -->
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="card @(Model.GdprRelevant ? "border-danger" : "")">
+            <div class="card-header"><i class="bi bi-person-lock"></i> GDPR</div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-3">
+                        <i class="bi @(Model.ContainsPersonalData ? "bi-check-circle-fill text-danger" : "bi-circle text-muted") fs-4"></i>
+                        <br /><small>Dati personali</small>
+                    </div>
+                    <div class="col-3">
+                        <i class="bi @(Model.ContainsSensitiveData ? "bi-check-circle-fill text-danger" : "bi-circle text-muted") fs-4"></i>
+                        <br /><small>Dati sensibili</small>
+                    </div>
+                    <div class="col-3">
+                        <i class="bi @(Model.ContainsFinancialData ? "bi-check-circle-fill text-warning" : "bi-circle text-muted") fs-4"></i>
+                        <br /><small>Dati finanziari</small>
+                    </div>
+                    <div class="col-3">
+                        <i class="bi @(Model.GdprRelevant ? "bi-check-circle-fill text-danger" : "bi-circle text-muted") fs-4"></i>
+                        <br /><small>GDPR rilevante</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-tags"></i> Tag</div>
+            <div class="card-body">
+                @foreach (var tag in Model.Tags)
+                {
+                    <span class="badge bg-primary me-1">@tag</span>
+                }
+                @if (!Model.Tags.Any())
+                {
+                    <span class="text-muted">Nessun tag assegnato</span>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Attributi -->
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between">
+        <span><i class="bi bi-list-columns-reverse"></i> Attributi (@Model.Attributes.Count)</span>
+        <a asp-controller="Lineage" asp-action="Index" asp-route-entityId="@Model.DataEntityId" class="btn btn-sm btn-outline-info">
+            <i class="bi bi-diagram-3"></i> Visualizza Lineage
+        </a>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover table-sm mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th></th>
+                        <th>Nome</th>
+                        <th>Tipo</th>
+                        <th>Nullable</th>
+                        <th>Descrizione Business</th>
+                        <th>GDPR</th>
+                        <th>DLP</th>
+                        <th>Retention</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var attr in Model.Attributes)
+                {
+                    var rowClass = attr.IsSensitiveData ? "table-danger" : (attr.IsPersonalData ? "table-warning" : "");
+                    <tr class="@rowClass">
+                        <td>
+                            @if (attr.IsPrimaryKey) { <i class="bi bi-key-fill text-warning" title="Primary Key"></i> }
+                        </td>
+                        <td>
+                            <strong>@attr.AttributeName</strong>
+                            @if (attr.GlossaryTermName != null) { <br /><small class="text-info"><i class="bi bi-book"></i> @attr.GlossaryTermName</small> }
+                        </td>
+                        <td><code>@attr.DataType@(attr.MaxLength.HasValue ? $"({attr.MaxLength})" : "")</code></td>
+                        <td>@(attr.IsNullable ? "Si" : "No")</td>
+                        <td><small>@attr.BusinessDescription</small></td>
+                        <td>
+                            @if (attr.IsDirectIdentifier) { <span class="badge bg-danger">ID Diretto</span> }
+                            else if (attr.IsIndirectIdentifier) { <span class="badge bg-warning text-dark">ID Indiretto</span> }
+                            @if (attr.GdprCategory != null) { <br /><small class="text-muted">@attr.GdprCategory</small> }
+                        </td>
+                        <td>
+                            @if (attr.DlpClassification != null)
+                            {
+                                var dlpColor = attr.DlpClassification switch {
+                                    "STRICTLY_CONFIDENTIAL" => "#DC3545",
+                                    "CONFIDENTIAL" => "#FFC107",
+                                    "INTERNAL" => "#17A2B8",
+                                    _ => "#28A745"
+                                };
+                                <span class="badge" style="background-color: @dlpColor">@attr.DlpClassification</span>
+                            }
+                        </td>
+                        <td>
+                            @if (attr.RetentionPeriodMonths.HasValue)
+                            {
+                                <small>@attr.RetentionPeriodMonths mesi</small>
+                            }
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

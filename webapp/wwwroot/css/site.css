@@ -1,0 +1,56 @@
+/* Athora Italia - Governed Data Catalog */
+
+body {
+    font-size: 0.9rem;
+    background-color: #f8f9fa;
+}
+
+.navbar-brand {
+    font-weight: bold;
+}
+
+.card {
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    transition: box-shadow 0.2s;
+}
+
+.card:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+}
+
+.table-sm td, .table-sm th {
+    padding: 0.4rem 0.5rem;
+}
+
+.badge {
+    font-weight: 500;
+}
+
+/* Lineage graph */
+#lineage-graph svg text {
+    font-family: inherit;
+    pointer-events: none;
+}
+
+#lineage-graph svg rect {
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+#lineage-graph svg rect:hover {
+    opacity: 1 !important;
+    stroke: #000;
+    stroke-width: 2;
+}
+
+/* Criticality heatmap cells */
+.criticality-cell {
+    display: inline-block;
+    width: 28px;
+    height: 28px;
+    line-height: 28px;
+    border-radius: 50%;
+    text-align: center;
+    color: white;
+    font-weight: bold;
+}

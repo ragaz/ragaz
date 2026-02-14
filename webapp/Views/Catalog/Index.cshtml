@@ -1,0 +1,57 @@
+@model IEnumerable<SourceSystemModel>
+@{ ViewData["Title"] = "Sistemi Sorgente"; }
+
+<h2><i class="bi bi-hdd-stack"></i> Sistemi Sorgente</h2>
+<p class="text-muted">Tutti i sistemi che alimentano il patrimonio dati di Athora Italia</p>
+
+<div class="row g-3">
+@foreach (var sys in Model)
+{
+    var iconClass = sys.SystemType switch {
+        "GESTIONALE" => "bi-building",
+        "ERP" => "bi-calculator",
+        "MOTORE_ATTUARIALE" => "bi-graph-up",
+        "DWH" => "bi-database",
+        "FILE" => "bi-file-earmark-spreadsheet",
+        _ => "bi-server"
+    };
+    var borderClass = sys.SystemType switch {
+        "GESTIONALE" => "border-primary",
+        "DWH" => "border-success",
+        "FILE" => "border-danger",
+        _ => ""
+    };
+    <div class="col-md-4">
+        <div class="card h-100 @borderClass">
+            <div class="card-header d-flex justify-content-between">
+                <span><i class="bi @iconClass"></i> @sys.SystemName</span>
+                <span class="badge bg-secondary">@sys.SystemType</span>
+            </div>
+            <div class="card-body">
+                <p class="small">@sys.Description</p>
+                @if (sys.Vendor != null)
+                {
+                    <p class="small text-muted"><strong>Vendor:</strong> @sys.Vendor</p>
+                }
+                <div class="d-flex justify-content-between">
+                    <span class="badge bg-info">@sys.AssetCount asset</span>
+                    <span class="badge bg-success">@sys.EntityCount entit&agrave;</span>
+                </div>
+                @if (sys.DataOwnerName != null)
+                {
+                    <small class="text-muted d-block mt-2"><i class="bi bi-person"></i> Data Owner: @sys.DataOwnerName</small>
+                }
+                else
+                {
+                    <small class="text-danger d-block mt-2"><i class="bi bi-exclamation-triangle"></i> Nessun Data Owner assegnato</small>
+                }
+            </div>
+            <div class="card-footer">
+                <a asp-action="Assets" asp-route-sourceSystemId="@sys.SourceSystemId" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-folder2-open"></i> Esplora Asset
+                </a>
+            </div>
+        </div>
+    </div>
+}
+</div>

@@ -1,0 +1,122 @@
+@model IEnumerable<DataEntityModel>
+@{ ViewData["Title"] = "Ricerca Catalogo"; var req = ViewBag.Request as SearchRequest ?? new SearchRequest(); }
+
+<h2><i class="bi bi-search"></i> Ricerca nel Catalogo</h2>
+
+<!-- Filtri -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form asp-action="Search" method="get" class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label">Termine di ricerca</label>
+                <input type="text" class="form-control" name="SearchTerm" value="@req.SearchTerm" placeholder="Nome, codice, descrizione..." />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Tipo entit&agrave;</label>
+                <select class="form-select" name="EntityType">
+                    <option value="">Tutti</option>
+                    <option value="TABLE" selected="@(req.EntityType == "TABLE")">Tabella</option>
+                    <option value="VIEW" selected="@(req.EntityType == "VIEW")">Vista</option>
+                    <option value="FILE_FLAT" selected="@(req.EntityType == "FILE_FLAT")">File Flat</option>
+                    <option value="EXCEL_SHEET" selected="@(req.EntityType == "EXCEL_SHEET")">Foglio Excel</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Layer DWH</label>
+                <select class="form-select" name="DwhLayer">
+                    <option value="">Tutti</option>
+                    <option value="STAGING">Staging</option>
+                    <option value="LEVEL0">Level 0</option>
+                    <option value="LEVEL1">Level 1 (Hub)</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Classificazione</label>
+                <select class="form-select" name="Classification">
+                    <option value="">Tutte</option>
+                    <option value="STRICTLY_CONFIDENTIAL">Strett. Riservato</option>
+                    <option value="CONFIDENTIAL">Riservato</option>
+                    <option value="INTERNAL">Interno</option>
+                    <option value="PUBLIC">Pubblico</option>
+                </select>
+            </div>
+            <div class="col-md-1">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="GdprOnly" value="true" checked="@req.GdprOnly" />
+                    <label class="form-check-label">GDPR</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="CriticalOnly" value="true" checked="@req.CriticalOnly" />
+                    <label class="form-check-label">Critici</label>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search"></i> Cerca</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Risultati -->
+<div class="table-responsive">
+    <table class="table table-hover table-sm">
+        <thead class="table-dark">
+            <tr>
+                <th>Entit&agrave;</th>
+                <th>Sistema</th>
+                <th>Tipo</th>
+                <th>Layer</th>
+                <th>Classificazione</th>
+                <th>Criticit&agrave;</th>
+                <th>Governance</th>
+                <th>GDPR</th>
+                <th>Azioni</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var e in Model)
+        {
+            var critBadge = e.CriticalityLevel switch {
+                "CRITICAL" => "bg-danger",
+                "HIGH" => "bg-warning text-dark",
+                "MEDIUM" => "bg-info",
+                "LOW" => "bg-success",
+                _ => "bg-secondary"
+            };
+            var govBadge = e.GovernanceStatus switch {
+                "APPROVED" => "bg-success",
+                "IN_REVIEW" => "bg-warning text-dark",
+                "DRAFT" => "bg-secondary",
+                _ => "bg-dark"
+            };
+            <tr>
+                <td>
+                    <a asp-action="Entity" asp-route-id="@e.DataEntityId"><strong>@e.EntityName</strong></a>
+                    <br /><small class="text-muted">@e.EntityCode</small>
+                </td>
+                <td><small>@e.SystemName</small></td>
+                <td><span class="badge bg-light text-dark">@e.EntityType</span></td>
+                <td>@e.DwhLayer</td>
+                <td>
+                    @if (e.ClassificationName != null)
+                    {
+                        <span class="badge" style="background-color: @e.ClassificationColor">@e.ClassificationName</span>
+                    }
+                </td>
+                <td><span class="badge @critBadge">@(e.CriticalityLevel ?? "N/D")</span></td>
+                <td><span class="badge @govBadge">@e.GovernanceStatus</span></td>
+                <td>
+                    @if (e.ContainsPersonalData) { <i class="bi bi-person-fill text-danger" title="Dati personali"></i> }
+                    @if (e.ContainsSensitiveData) { <i class="bi bi-heart-pulse-fill text-danger" title="Dati sensibili"></i> }
+                    @if (e.ContainsFinancialData) { <i class="bi bi-currency-euro text-warning" title="Dati finanziari"></i> }
+                </td>
+                <td>
+                    <a asp-action="Entity" asp-route-id="@e.DataEntityId" class="btn btn-sm btn-outline-primary" title="Dettaglio"><i class="bi bi-eye"></i></a>
+                    <a asp-controller="Lineage" asp-action="Index" asp-route-entityId="@e.DataEntityId" class="btn btn-sm btn-outline-info" title="Lineage"><i class="bi bi-diagram-3"></i></a>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>
+<p class="text-muted small">@Model.Count() risultati trovati (max 200)</p>
