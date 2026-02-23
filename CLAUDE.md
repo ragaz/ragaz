@@ -251,6 +251,9 @@ All C# models are in a single file `webapp/Models/CatalogModels.cs`. When adding
 - **Workflow actions** – The workflow table exists but there are no controller actions to advance or approve workflow steps.
 - **Data Quality** – `DataQualityRule` and `DataQualityResult` tables are referenced in the architecture diagram but not yet in the schema scripts.
 - **Tests** – No test project exists. When adding tests, create a separate `GovernedDataCatalog.Tests` project targeting xUnit.
+- **No `.gitignore`** – The repository has no `.gitignore`. Add one (standard Visual Studio / .NET template) before committing build artifacts or secrets.
+- **No CI/CD** – No pipeline files (`.github/workflows`, GitLab CI, etc.) are present.
+- **No Docker** – No `Dockerfile` or `docker-compose.yml`; deployment is manual to IIS or Kestrel.
 
 ---
 
@@ -269,6 +272,20 @@ All C# models are in a single file `webapp/Models/CatalogModels.cs`. When adding
 2. Follow the soft-delete and audit column conventions described above.
 3. Add to the `dcat` schema.
 4. Update seed data scripts if reference data is needed.
+
+### Discovery Stored Procedures
+
+`database/stored-procedures/02_discovery_procedures.sql` contains automation tools for initial catalog population:
+
+| Procedure | Purpose |
+|---|---|
+| `sp_DiscoverEntities` | Scans SQL Server system tables and registers tables/views into the catalog. Supports `@DryRun` mode to preview without committing. |
+| `sp_DiscoverAttributes` | Scans `INFORMATION_SCHEMA.COLUMNS` and registers columns/attributes. Supports `@DryRun`. |
+| `sp_DiscoverPipelines` | Reads SQL Server Agent jobs and steps and creates `EtlPipeline` records. |
+| `sp_AutoClassifyGdpr` | Pattern-matches column names (e.g. `%CODICE_FISCALE%`, `%EMAIL%`) and applies GDPR flags automatically. |
+| `sp_DetectDrift` | Identifies tables in SQL Server that are not yet catalogued (shadow IT), or catalog entries for tables that no longer exist. |
+
+Always run discovery procedures in `@DryRun = 1` mode first to inspect what will be inserted before committing.
 
 ### SQL query guidelines
 
